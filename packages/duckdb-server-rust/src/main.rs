@@ -2,6 +2,7 @@ use anyhow::Result;
 use axum_server::tls_rustls::RustlsConfig;
 use listenfd::ListenFd;
 use std::net::TcpListener;
+use std::env;
 use std::{net::Ipv4Addr, net::SocketAddr, path::PathBuf};
 use tokio::net;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -26,8 +27,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    let db_path = env::args().nth(1).unwrap_or(":memory:".to_string());
+
     // App setup
-    let app = app::app()?;
+    let app = app::app(&db_path)?;
+
+    tracing::info!(
+        "Connected DuckDB to {0}",
+        &db_path
+    );
 
     // TLS configuration
     let mut config = RustlsConfig::from_pem_file(
@@ -59,7 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(_) => {
             tracing::warn!("No keys for HTTPS found.");
             tracing::info!(
-                "DuckDB Server listening on http://{0} and ws://{0}.",
+                "DuckDB Server listening on http://{0} and ws://{0}",
                 listener.local_addr()?
             );
 

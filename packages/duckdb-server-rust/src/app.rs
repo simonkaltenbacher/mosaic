@@ -40,9 +40,9 @@ async fn handle_post(
     query::handle(&state, params).await
 }
 
-pub fn app() -> Result<Router> {
+pub fn app(db_path: &str) -> Result<Router> {
     // Database and state setup
-    let db = ConnectionPool::new(":memory:", 10)?;
+    let db = ConnectionPool::new(db_path, 5)?;
     let cache = lru::LruCache::new(1000.try_into()?);
 
     let state = Arc::new(AppState {
